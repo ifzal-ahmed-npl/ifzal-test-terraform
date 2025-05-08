@@ -20,14 +20,6 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v2
 
-      - name: Extract branch name
-        shell: bash
-        run: echo "branch=${GITHUB_HEAD_REF}" >> $GITHUB_OUTPUT
-        id: extract_branch
-        env:
-          GITHUB_BRANCH: ${{ github.ref }}
-
-
       - name: Install Infisical
         run: |
           sudo apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo bash
