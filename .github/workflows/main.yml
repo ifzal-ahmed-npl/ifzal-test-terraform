@@ -73,16 +73,3 @@ jobs:
         continue-on-error: false
         working-directory: Projects/Data-Lake/sql-s3-cross-account-replication
 
-      - name: Terraform apply
-        env:
-          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          ENV: ${{ steps.extract_branch.outputs.branch }}
-        run: |
-          set -a
-          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
-          set +a
-          terraform apply -var='ENV=${{env.ENV}}' -var='INFISICAL_TOKEN=${{env.INFISICAL_TOKEN}}' -input=false -no-color -auto-approve
-        continue-on-error: false
-        working-directory: Projects/Data-Lake/sql-s3-cross-account-replication
