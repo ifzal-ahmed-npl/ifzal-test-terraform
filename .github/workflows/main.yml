@@ -33,7 +33,6 @@ jobs:
           sudo apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo bash
           sudo apt-get update && sudo apt-get install -y infisical
           infisical --version
-        working-directory: Projects/Data-Lake
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -57,7 +56,6 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: terraform init -backend-config BackendConfig/prod-backend-config.tfvars -no-color -input=false
-        working-directory: Projects/Data-Lake/sql-s3-cross-account-replication
 
       - name: Terraform plan
         env:
@@ -71,5 +69,3 @@ jobs:
           set +a
           terraform plan -var='INFISICAL_TOKEN=${{env.INFISICAL_TOKEN}}' -var='ENV=${{env.ENV}}' -input=false -no-color -out=./tfplan | tee ./terraform-plan-output.txt
         continue-on-error: false
-        working-directory: Projects/Data-Lake/sql-s3-cross-account-replication
-
