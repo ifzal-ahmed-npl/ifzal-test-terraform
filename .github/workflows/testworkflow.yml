@@ -7,6 +7,8 @@ on:
         required: true
         type: string
 
+run_name: Deploying Release ${{ inputs.release_version }}
+
 jobs:
     datalake-terraform-deploy-dev:
       runs-on: ubuntu-latest
