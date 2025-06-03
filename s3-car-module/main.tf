@@ -10,7 +10,8 @@ resource "aws_iam_role" "source_replication_role" {
       "Action": "sts:AssumeRole",
       "Principal": {
         "Service": [
-          "s3.amazonaws.com"
+          "s3.amazonaws.com",
+          "batchoperations.amazonaws.com"
         ]
       },
       "Effect": "Allow",

@@ -1,0 +1,24 @@
+name: Zal-Test-Workflow
+run-name: Release ${{ env.latestTag }}
+
+on:
+  workflow_dispatch:
+
+jobs:
+    datalake-terraform-deploy-dev:
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+      outputs:
+        tag: ${{ steps.tags.outputs.new_tag }}
+      steps:
+      - uses: actions/checkout@v3
+      - name: Get Current Tag
+        run: |
+          git config --global safe.directory '*'
+          git tag -d $(git tag -l) > /dev/null 2>&1
+          git fetch --tags  > /dev/null 2>&1
+          latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
+          echo $latestTag
+          echo ${{ env.latestTag }}
