@@ -7,7 +7,7 @@ on:
         required: true
         type: string
 
-run-name: Deploying Release ${{ inputs.release_version }}
+run-name: Deploying Release ${{ github.ref }}
 
 jobs:
     datalake-terraform-deploy-dev:
