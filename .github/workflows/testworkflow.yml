@@ -22,4 +22,4 @@ jobs:
 
       - name: Confirm Release Checked out successfully
         run: |
-          ls -la
+          ls -la .github
