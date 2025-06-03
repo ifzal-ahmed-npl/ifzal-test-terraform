@@ -20,3 +20,7 @@ jobs:
       - name: Checkout Release
         run: |
           git checkout ${{ inputs.release_version
+
+      name: Confirm Release Checked out successfully
+      run: |
+          pwd
