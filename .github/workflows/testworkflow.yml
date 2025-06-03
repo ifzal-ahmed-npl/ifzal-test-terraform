@@ -17,9 +17,8 @@ jobs:
           shell: bash
       steps:
       - uses: actions/checkout@v3
-      - name: Checkout Release
-        run: |
-          git checkout ${{ inputs.release_version }}
+        with:
+          ref: ${{ inputs.release_version }}
 
       - name: Confirm Release Checked out successfully
         run: |
