@@ -1,8 +1,11 @@
 name: Zal-Test-Workflow
-run-name: Release ${{ env.latestTag }}
 
 on:
   workflow_dispatch:
+    inputs:
+      release_version:
+        required: true
+        type: string
 
 jobs:
     datalake-terraform-deploy-dev:
