@@ -15,15 +15,8 @@ jobs:
       defaults:
         run:
           shell: bash
-      outputs:
-        tag: ${{ steps.tags.outputs.new_tag }}
       steps:
       - uses: actions/checkout@v3
-      - name: Get Current Tag
+      - name: Checkout Release
         run: |
-          git config --global safe.directory '*'
-          git tag -d $(git tag -l) > /dev/null 2>&1
-          git fetch --tags  > /dev/null 2>&1
-          latestTag=$(git describe --tags `git rev-list --tags --max-count=1`)
-          echo $latestTag
-          echo ${{ env.latestTag }}
+          git checkout ${{ inputs.release_version
