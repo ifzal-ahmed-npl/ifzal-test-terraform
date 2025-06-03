@@ -22,4 +22,4 @@ jobs:
 
       - name: Confirm Release Checked out successfully
         run: |
-          pwd
+          ls -la
