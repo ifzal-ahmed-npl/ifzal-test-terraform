@@ -1,11 +1,8 @@
 name: Zal-Test-Workflow
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_version:
-        required: true
-        type: string
+  push:
+    tag: '[0-9].[0-9].[0-9].[0-9]'
 
 run-name: Deploying Release ${{ github.ref }}
 
