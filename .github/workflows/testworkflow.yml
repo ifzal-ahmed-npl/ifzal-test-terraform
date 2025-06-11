@@ -2,11 +2,6 @@ name: BDM-DataLake-Terraform-Deploy-Nonprod
 run-name: Release ${{ github.ref_name }}
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_tag:
-        description: Release Tag
-        required: false
 
   push:
     tags:
@@ -22,13 +17,7 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
-      - name: Checkout Release with Input Tag
-        if: ${{ github.ref_name == "main" || github.ref_name == "dev" }}
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.inputs.release_tag }}
       - name: Checkout Release via Triggered Run
-        if: ${{ github.ref_name != "main" || github.ref_name != "dev" }}
         uses: actions/checkout@v3
         with:
           ref: ${{ github.ref_name }}
