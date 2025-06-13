@@ -2,6 +2,10 @@ name: BDM-DataLake-Terraform-Deploy-Nonprod
 run-name: Release ${{ github.ref_name }}
 
 on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release Tag"
 
   push:
     tags:
@@ -17,8 +21,14 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main' || github.ref_name == 'dev'
+        with:
+          ref: ${{ github.inputs.release_tag }}
       - name: Checkout Release via Triggered Run
         uses: actions/checkout@v3
+        if: github.ref_name == '[0-9].[0-9].[0-9]-nonprod'
         with:
           ref: ${{ github.ref_name }}
       - name: 'Cleanup build folder'
@@ -61,8 +71,14 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main' || github.ref_name == 'dev'
+        with:
+          ref: ${{ github.inputs.release_tag }}
       - name: Checkout Release via Triggered Run
         uses: actions/checkout@v3
+        if: github.ref_name == '[0-9].[0-9].[0-9]-nonprod'
         with:
           ref: ${{ github.ref_name }}
       - name: Configure AWS credentials
@@ -95,7 +111,14 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main' || github.ref_name == 'dev'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: github.ref_name == '[0-9].[0-9].[0-9]-nonprod'
         with:
           ref: ${{ github.ref_name }}
       - name: 'Cleanup build folder'
@@ -132,7 +155,14 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main' || github.ref_name == 'dev'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: github.ref_name == '[0-9].[0-9].[0-9]-nonprod'
         with:
           ref: ${{ github.ref_name }}
       - name: 'Cleanup build folder'
