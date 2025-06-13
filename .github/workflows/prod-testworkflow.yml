@@ -1,0 +1,190 @@
+name: BDM-DataLake-Terraform-Deploy-Prod
+run-name: Release ${{ github.ref_name }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Release Tag"
+
+  push:
+    tags:
+      - '[0-9].[0-9].[0-9]'
+
+jobs:
+    datalake-terraform-plan-preprod:
+      environment: PREPROD
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+      outputs:
+        tag: ${{ steps.tags.outputs.new_tag }}
+      steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}
+        run: |
+          terraform init -backend-config BackendConfig/dev-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ github.workspace }}
+        run: |
+          terraform plan -no-color -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+
+    datalake-terraform-apply-preprod:
+      environment: PREPROD
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+      outputs:
+        tag: ${{ steps.tags.outputs.new_tag }}
+      steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          terraform init -backend-config BackendConfig/dev-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform apply
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          set -a
+          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
+          set +a
+          terraform apply -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -no-color -auto-approve
+
+    datalake-terraform-plan-prod:
+      environment: PROD
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+      outputs:
+        tag: ${{ steps.tags.outputs.new_tag }}
+      steps:
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          ref: ${{ github.ref_name }}
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          terraform plan -no-color -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+
+    datalake-terraform-apply-prod:
+      environment: PROD
+      runs-on: ubuntu-latest
+      defaults:
+        run:
+          shell: bash
+      outputs:
+        tag: ${{ steps.tags.outputs.new_tag }}
+      steps:
+      - name: Checkout Release via Workflow Dispatch
+        uses: actions/checkout@v3
+        if: github.ref_name == 'main'
+        with:
+          ref: ${{ github.inputs.release_tag }}
+      - name: Checkout Release via Triggered Run
+        uses: actions/checkout@v3
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          ref: ${{ github.ref_name }}
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+      - uses: actions/checkout@v3
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform apply
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          terraform apply -input=false -no-color -auto-approve
