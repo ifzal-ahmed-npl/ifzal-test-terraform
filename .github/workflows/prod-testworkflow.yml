@@ -3,9 +3,6 @@ run-name: Release ${{ github.ref_name }}
 
 on:
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: "Release Tag"
 
   push:
     tags:
@@ -27,12 +24,7 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
-      - name: Checkout Release via Workflow Dispatch
-        uses: actions/checkout@v3
-        if: github.ref_name == 'main'
-        with:
-          ref: ${{ github.inputs.release_tag }}
-      - name: Checkout Release via Triggered Run
+      - name: Checkout Release Tag
         uses: actions/checkout@v3
         if: startsWith(github.ref, 'refs/tags')
         with:
@@ -71,12 +63,7 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
-      - name: Checkout Release via Workflow Dispatch
-        uses: actions/checkout@v3
-        if: github.ref_name == 'main'
-        with:
-          ref: ${{ github.inputs.release_tag }}
-      - name: Checkout Release via Triggered Run
+      - name: Checkout Release Tag
         uses: actions/checkout@v3
         if: startsWith(github.ref, 'refs/tags')
         with:
@@ -114,12 +101,7 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
-      - name: Checkout Release via Workflow Dispatch
-        uses: actions/checkout@v3
-        if: github.ref_name == 'main'
-        with:
-          ref: ${{ github.inputs.release_tag }}
-      - name: Checkout Release via Triggered Run
+      - name: Checkout Release Tag
         uses: actions/checkout@v3
         if: startsWith(github.ref, 'refs/tags')
         with:
@@ -159,12 +141,7 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
-      - name: Checkout Release via Workflow Dispatch
-        uses: actions/checkout@v3
-        if: github.ref_name == 'main'
-        with:
-          ref: ${{ github.inputs.release_tag }}
-      - name: Checkout Release via Triggered Run
+      - name: Checkout Release Tag
         uses: actions/checkout@v3
         if: startsWith(github.ref, 'refs/tags')
         with:
