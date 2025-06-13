@@ -39,7 +39,7 @@ jobs:
           ref: ${{ github.ref_name }}
       - name: Update Run name
         if: ${{ github.ref_name == main || github.ref_name == dev }}
-        run: echo "GITHUB_REF=${{ github.inputs.release_tag }}" >> $GITHUB_ENV
+        run: echo "GITHUB_REF=${{ github.inputs.release_tag }}"
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
