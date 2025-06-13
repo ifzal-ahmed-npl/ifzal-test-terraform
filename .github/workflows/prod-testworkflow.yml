@@ -115,12 +115,12 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform init -backend-config BackendConfig/prod-backend-config.tfvars -no-color -input=false
 
       - name: Terraform plan
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform plan -no-color -var-file=var-overrides/prod.tfvars -input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
