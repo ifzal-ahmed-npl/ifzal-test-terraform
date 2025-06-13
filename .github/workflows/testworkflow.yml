@@ -93,12 +93,12 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform init -backend-config BackendConfig/dev-backend-config.tfvars -no-color -input=false
 
       - name: Terraform apply
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform apply -var-file=var-overrides/dev.tfvars -input=false -no-color -auto-approve
 
@@ -111,6 +111,12 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
       - name: Checkout Release via Workflow Dispatch
         uses: actions/checkout@v3
         if: github.ref_name == 'dev'
@@ -121,13 +127,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags')
         with:
           ref: ${{ github.ref_name }}
-      - name: 'Cleanup build folder'
-        run: |
-          ls -la ./
-          rm -rf ./* || true
-          rm -rf ./.??* || true
-          ls -la ./
-      - uses: actions/checkout@v3
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -137,12 +136,12 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
 
       - name: Terraform plan
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform plan -no-color -var-file=var-overrides/sit.tfvars-input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
@@ -181,11 +180,11 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
 
       - name: Terraform apply
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           terraform apply -var-file=var-overrides/sit.tfvars -input=false -no-color -auto-approve
