@@ -48,16 +48,17 @@ jobs:
       - name: Terraform init
         working-directory: ${{ github.workspace }}
         run: |
-          terraform init -backend-config BackendConfig/dev-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
 
       - name: Terraform plan
         working-directory: ${{ github.workspace }}
         run: |
-          terraform plan -no-color -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+          terraform plan -var-file=var-overrides/preprod.tfvars -no-color -input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
     datalake-terraform-apply-preprod:
       environment: PREPROD
       runs-on: ubuntu-latest
+      needs: datalake-terraform-plan-preprod
       defaults:
         run:
           shell: bash
@@ -91,15 +92,12 @@ jobs:
       - name: Terraform init
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform init -backend-config BackendConfig/dev-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
 
       - name: Terraform apply
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          set -a
-          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
-          set +a
-          terraform apply -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -no-color -auto-approve
+          terraform apply -var-file=var-overrides/prod.tfvars -input=false -no-color -auto-approve
 
     datalake-terraform-plan-prod:
       environment: PROD
@@ -138,16 +136,17 @@ jobs:
       - name: Terraform init
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config BackendConfig/prod-backend-config.tfvars -no-color -input=false
 
       - name: Terraform plan
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform plan -no-color -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+          terraform plan -no-color -var-file=var-overrides/prod.tfvars -input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
     datalake-terraform-apply-prod:
       environment: PROD
       runs-on: ubuntu-latest
+      needs: datalake-terraform-plan-prod
       defaults:
         run:
           shell: bash
@@ -182,9 +181,9 @@ jobs:
       - name: Terraform init
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform init -backend-config BackendConfig/sit-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config BackendConfig/prod-backend-config.tfvars -no-color -input=false
 
       - name: Terraform apply
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform apply -input=false -no-color -auto-approve
+          terraform apply -var-file=var-overrides/prod.tfvars -input=false -no-color -auto-approve

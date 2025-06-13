@@ -53,11 +53,12 @@ jobs:
       - name: Terraform plan
         working-directory: ${{ github.workspace }}
         run: |
-          terraform plan -no-color -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+          terraform plan -var-file=var-overrides/dev.tfvars -no-color -input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
     datalake-terraform-apply-dev:
       environment: DEV
       runs-on: ubuntu-latest
+      needs: datalake-terraform-plan-dev
       defaults:
         run:
           shell: bash
@@ -96,10 +97,7 @@ jobs:
       - name: Terraform apply
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          set -a
-          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
-          set +a
-          terraform apply -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -no-color -auto-approve
+          terraform apply -var-file=var-overrides/dev.tfvars -input=false -no-color -auto-approve
 
     datalake-terraform-plan-sit:
       environment: SIT
@@ -143,11 +141,12 @@ jobs:
       - name: Terraform plan
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform plan -no-color -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+          terraform plan -no-color -var-file=var-overrides/sit.tfvars-input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
     datalake-terraform-apply-sit:
       environment: SIT
       runs-on: ubuntu-latest
+      needs: datalake-terraform-plan-sit
       defaults:
         run:
           shell: bash
@@ -187,4 +186,4 @@ jobs:
       - name: Terraform apply
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
         run: |
-          terraform apply -input=false -no-color -auto-approve
+          terraform apply -var-file=var-overrides/sit.tfvars -input=false -no-color -auto-approve
