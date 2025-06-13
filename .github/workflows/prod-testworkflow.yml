@@ -97,7 +97,7 @@ jobs:
       - name: Terraform apply
         working-directory: ${{ github.workspace }}
         run: |
-          terraform apply -var-file=var-overrides/prod.tfvars -input=false -no-color -auto-approve
+          terraform apply -var-file=var-overrides/preprod.tfvars -input=false -no-color -auto-approve
 
     datalake-terraform-plan-prod:
       environment: PROD

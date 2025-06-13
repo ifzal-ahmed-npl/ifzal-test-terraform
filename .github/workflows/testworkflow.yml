@@ -143,7 +143,7 @@ jobs:
       - name: Terraform plan
         working-directory: ${{ github.workspace }}
         run: |
-          terraform plan -no-color -var-file=var-overrides/sit.tfvars-input=false -out=./tfplan | tee ./terraform-plan-output.txt
+          terraform plan -no-color -var-file=var-overrides/sit.tfvars -input=false -out=./tfplan | tee ./terraform-plan-output.txt
 
     datalake-terraform-apply-sit:
       environment: SIT
