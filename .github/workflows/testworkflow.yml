@@ -21,6 +21,12 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
       - name: Checkout Release via Workflow Dispatch
         uses: actions/checkout@v3
         if: github.ref_name == 'main' || github.ref_name == 'dev'
@@ -28,16 +34,9 @@ jobs:
           ref: ${{ github.inputs.release_tag }}
       - name: Checkout Release via Triggered Run
         uses: actions/checkout@v3
-        if: github.ref_name == '[0-9].[0-9].[0-9]-nonprod'
+        if: contains(github.ref_name, '[0-9].[0-9].[0-9]-nonprod')
         with:
           ref: ${{ github.ref_name }}
-      - name: 'Cleanup build folder'
-        run: |
-          ls -la ./
-          rm -rf ./* || true
-          rm -rf ./.??* || true
-          ls -la ./
-      - uses: actions/checkout@v3
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
