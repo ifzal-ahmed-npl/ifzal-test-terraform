@@ -34,7 +34,7 @@ jobs:
           ref: ${{ github.inputs.release_tag }}
       - name: Checkout Release via Triggered Run
         uses: actions/checkout@v3
-        if: startsWith(github.event.ref, 'refs/tags/*')
+        if: startsWith(github.event.ref, 'refs/tags/[0-9].[0-9].[0-9]-nonprod')
         with:
           ref: ${{ github.ref_name }}
       - name: Configure AWS credentials
