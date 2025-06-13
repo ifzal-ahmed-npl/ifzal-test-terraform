@@ -21,6 +21,10 @@ jobs:
       outputs:
         tag: ${{ steps.tags.outputs.new_tag }}
       steps:
+      - name: Update Run name
+        if: ${{ github.ref_name == main || github.ref_name == dev }}
+        run: |
+          echo "GITHUB_REF=${{ github.inputs.release_tag }}" >> $GITHUB_ENV
       - name: 'Cleanup build folder'
         run: |
           ls -la ./
