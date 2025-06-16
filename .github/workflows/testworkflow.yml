@@ -12,7 +12,7 @@ jobs:
     datalake-terraform-plan-dev:
       environment: DEV
       runs-on: ubuntu-latest
-      if: ${{ contains('nonprod', github.ref_name) }}
+      if: ${{ !contains('[0-9].[0-9].[0-9]', github.ref_name) }}
       defaults:
         run:
           shell: bash
@@ -88,7 +88,7 @@ jobs:
           terraform apply -var-file=var-overrides/dev.tfvars -input=false -no-color -auto-approve
 
     datalake-terraform-plan-sit:
-      if: ${{ contains('nonprod', github.ref_name) }}
+      if: ${{ contains('[0-9].[0-9].[0-9]', github.ref_name) }}
       environment: SIT
       runs-on: ubuntu-latest
       defaults:

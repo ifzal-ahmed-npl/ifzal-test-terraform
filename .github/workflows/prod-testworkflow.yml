@@ -12,7 +12,7 @@ jobs:
     datalake-terraform-plan-preprod:
       environment: PREPROD
       runs-on: ubuntu-latest
-      if: ${{ !contains('nonprod', github.ref_name) }}
+      if: ${{ contains('nonprod', github.ref_name) }}
       defaults:
         run:
           shell: bash
