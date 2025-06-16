@@ -12,6 +12,7 @@ jobs:
     datalake-terraform-plan-preprod:
       environment: PREPROD
       runs-on: ubuntu-latest
+      if: ${{ !contains('nonprod', github.ref_name) }}
       defaults:
         run:
           shell: bash
@@ -89,6 +90,7 @@ jobs:
     datalake-terraform-plan-prod:
       environment: PROD
       runs-on: ubuntu-latest
+      if: ${{ !contains('nonprod', github.ref_name) }}
       defaults:
         run:
           shell: bash
