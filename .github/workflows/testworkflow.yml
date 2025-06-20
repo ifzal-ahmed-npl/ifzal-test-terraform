@@ -6,7 +6,7 @@ on:
 
   push:
     tags:
-      - '[0-9].[0-9].[0-2000]-nonprod'
+      - '[0-9].[0-9].[*]-nonprod'
 
 jobs:
     datalake-terraform-plan-dev:
