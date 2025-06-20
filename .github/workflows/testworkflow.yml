@@ -12,6 +12,7 @@ jobs:
     datalake-terraform-plan-dev:
       environment: DEV
       runs-on: ubuntu-latest
+      container: node:20
       if: ${{ contains(github.ref_name, 'nonprod' ) }}
       defaults:
         run:
