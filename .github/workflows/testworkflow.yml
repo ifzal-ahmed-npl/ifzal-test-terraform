@@ -38,7 +38,7 @@ jobs:
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
       - name: Install Infisical
-        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        working-directory: ${{ github.workspace }}
         run: |
           apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
           sudo apt-get update && sudo apt-get install -y infisical
