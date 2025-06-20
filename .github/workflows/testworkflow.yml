@@ -6,7 +6,7 @@ on:
 
   push:
     tags:
-      - ${{ contains(github.ref_name, 'nonprod' ) }}
+      - '[0-9].[0-9].[0-9]-nonprod'
 
 jobs:
     datalake-terraform-plan-dev:
