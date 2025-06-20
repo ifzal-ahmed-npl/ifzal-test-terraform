@@ -37,6 +37,13 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
 
+      - name: Install Infisical
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo -E bash
+          sudo apt-get update && sudo apt-get install -y infisical
+          infisical --version
+
       - uses: hashicorp/setup-terraform@v3
       - name: Terraform init
         working-directory: ${{ github.workspace }}
