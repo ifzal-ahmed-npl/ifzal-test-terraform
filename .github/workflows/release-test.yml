@@ -65,7 +65,5 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
-          git config user.name "devops"
-          git config user.email "github-actions@github.com"
-          git add main.tf CHANGELOG.md
+          git add .
           git commit -m "Update Terraform source to ${NEW_TAG} and Change Log"

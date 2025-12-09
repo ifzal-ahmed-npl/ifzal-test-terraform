@@ -1,0 +1,163 @@
+
+name: Generate Changelog
+
+on:
+  workflow_dispatch:
+    inputs:
+      range:
+        description: "Range to include (e.g., last-tag..HEAD, or full)"
+        required: false
+        default: "auto"
+  push:
+    branches: ["main"]
+    # Uncomment to regenerate on new tags
+    # tags:
+    #   - "*"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  changelog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Determine commit range
+        id: range
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Get input selection
+          INPUT_RANGE="${{ github.event.inputs.range || 'auto' }}"
+
+          # Ensure tags are available locally
+          git fetch --tags || true
+
+          # Try to find the last tag reachable from HEAD
+          LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+
+          if [[ "${INPUT_RANGE}" == "full" ]]; then
+            # From the initial commit to HEAD
+            FIRST_COMMIT="$(git rev-list --max-parents=0 HEAD)"
+            RANGE="${FIRST_COMMIT}..HEAD"
+            RANGE_LABEL="All changes"
+          elif [[ "${INPUT_RANGE}" == "auto" ]]; then
+            if [[ -n "${LAST_TAG}" ]]; then
+              RANGE="${LAST_TAG}..HEAD"
+              RANGE_LABEL="Changes since ${LAST_TAG}"
+            else
+              FIRST_COMMIT="$(git rev-list --max-parents=0 HEAD)"
+              RANGE="${FIRST_COMMIT}..HEAD"
+              RANGE_LABEL="All changes"
+            fi
+          else
+            # Use the user-provided range verbatim (e.g., v1.2.3..HEAD)
+            RANGE="${INPUT_RANGE}"
+            RANGE_LABEL="Range ${INPUT_RANGE}"
+          fi
+
+          echo "Last tag: ${LAST_TAG:-<none>}"
+          echo "Using range: ${RANGE}"
+
+          # Export for later steps
+          echo "range=${RANGE}" >> "$GITHUB_OUTPUT"
+          echo "range_label=${RANGE_LABEL}" >> "$GITHUB_OUTPUT"
+          echo "last_tag=${LAST_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate changelog section (Markdown)
+        id: gen
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RANGE="${{ steps.range.outputs.range }}"
+          RANGE_LABEL="${{ steps.range.outputs.range_label }}"
+          TODAY="$(date -u +'%Y-%m-%d')"
+
+          # Prepare a temporary file
+          TMP_SECTION="$(mktemp)"
+
+          # Header for this section
+          {
+            echo "## ${RANGE_LABEL} – ${TODAY}"
+            echo
+            echo "**Commits:**"
+            echo
+          } > "${TMP_SECTION}"
+
+          # Build commit list
+          # Format: - <message> (author, YYYY-MM-DD) [<short SHA>] [PR # if present]
+          # You can tweak the format to suit Conventional Commits if you use them.
+          git log "${RANGE}" \
+            --pretty=format:'- %s (%an, %ad) `%h`%n' \
+            --date=short \
+          >> "${TMP_SECTION}"
+
+          echo >> "${TMP_SECTION}"
+
+          # Show a preview in logs
+          echo "---- Generated Section ----"
+          cat "${TMP_SECTION}"
+          echo "---------------------------"
+
+          # Persist path for next step
+          echo "section_path=${TMP_SECTION}" >> "$GITHUB_OUTPUT"
+
+      - name: Update CHANGELOG.md
+        id: update
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          SECTION_PATH="${{ steps.gen.outputs.section_path }}"
+          CHANGELOG="CHANGELOG.md"
+
+          if [[ -f "${CHANGELOG}" ]]; then
+            echo "Found existing ${CHANGELOG}. Prepending new section."
+
+            # Prepend the new section while keeping existing content
+            TMP_OUT="$(mktemp)"
+            cat "${SECTION_PATH}" > "${TMP_OUT}"
+            echo >> "${TMP_OUT}"
+            cat "${CHANGELOG}" >> "${TMP_OUT}"
+            mv "${TMP_OUT}" "${CHANGELOG}"
+          else
+            echo "No existing ${CHANGELOG}. Creating a new one."
+
+            {
+              echo "# Changelog"
+              echo
+              echo "All notable changes to this project are documented here."
+              echo
+            } > "${CHANGELOG}"
+
+            cat "${SECTION_PATH}" >> "${CHANGELOG}"
+          fi
+
+          echo "Updated ${CHANGELOG}:"
+          head -n 50 "${CHANGELOG}" || true
+
+      - name: Commit & push changelog (if changed)
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if ! git diff --quiet --exit-code; then
+            git add CHANGELOG.md
+            git commit -m "chore(changelog): update $(date -u +'%Y-%m-%d')"
+            git push origin HEAD:${{ github.ref_name }}
+            echo "Changelog committed and pushed."
+          else
+            echo "No changes detected in CHANGELOG.md; skipping commit."
