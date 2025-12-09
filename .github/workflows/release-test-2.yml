@@ -1,160 +1,129 @@
 
-name: Generate Changelog
+name: PR-only Changelog (no tags)
 
 on:
-  workflow_dispatch:
-    inputs:
-      range:
-        description: "Range to include (e.g., last-tag..HEAD, or full)"
-        required: false
-        default: "auto"
   push:
-    branches: ["main"]
-    # Uncomment to regenerate on new tags
-    # tags:
-    #   - "*"
+    branches:
+      - main  # or your default branch
 
 permissions:
   contents: write
-  pull-requests: write
+  pull-requests: read
 
 jobs:
-  changelog:
+  build-changelog:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout (full history)
+      - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Determine commit range
-        id: range
-        shell: bash
+      - name: Install Node (for github-script)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build PR-only changelog for this push
+        id: changelog
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const head = context.sha;
+            const before = context.payload.before; // sha before this push
+
+            // If this is the first push (before is all-zero), fallback to first commit on the branch
+            let base = before && !/^0+$/.test(before)
+              ? before
+              : null;
+
+            if (!base) {
+              // Find the first commit on default branch
+              const branch = context.ref.replace('refs/heads/', '');
+              // We need to list commits and take the oldest; the REST API pages by newest first
+              // So we walk pages and keep the last seen
+              let page = 1, lastSha = null;
+              while (true) {
+                const res = await github.rest.repos.listCommits({
+                  owner, repo,
+                  sha: branch,
+                  per_page: 100,
+                  page
+                });
+                const commits = res.data;
+                if (!commits || commits.length === 0) break;
+                lastSha = commits[commits.length - 1].sha;
+                if (commits.length < 100) break;
+                page++;
+              }
+              base = lastSha || head + '^'; // fallback to previous commit of head
+            }
+
+            core.info(`Comparing commits: ${base}..${head}`);
+
+            const compare = await github.rest.repos.compareCommits({
+              owner, repo, base, head
+            });
+
+            const commits = compare.data.commits || [];
+            core.info(`Found ${commits.length} commits.`);
+
+            // Map PRs that include these commits
+            const prMap = new Map();
+            for (const c of commits) {
+              const sha = c.sha;
+              const prs = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner, repo, commit_sha: sha
+              });
+              for (const pr of prs.data || []) {
+                // Only include merged PRs to ensure changes actually landed
+                if (pr.merged_at) {
+                  if (!prMap.has(pr.number)) {
+                    prMap.set(pr.number, {
+                      number: pr.number,
+                      title: pr.title,
+                      url: pr.html_url,
+                      author: pr.user?.login,
+                      commits: []
+                    });
+                  }
+                  prMap.get(pr.number).commits.push({
+                    sha,
+                    message: c.commit.message.split('\n')[0],
+                    author: c.commit.author?.name || c.author?.login || 'unknown'
+                  });
+                }
+              }
+            }
+
+            let md = `# Changelog (push to ${context.ref.replace('refs/heads/','')})\n\n`;
+            md += `Commits in range **${base.substring(0,7)}..${head.substring(0,7)}**\n\n`;
+
+            if (prMap.size === 0) {
+              md += `*(No PR commits found in this push — likely direct commits or merge without PR association.)*\n`;
+            } else {
+              for (const [number, pr] of [...prMap.entries()].sort((a,b)=>a[0]-b[0])) {
+                md += `## PR #${number}: ${pr.title} (by @${pr.author})\n`;
+                md += `${pr.url}\n\n`;
+                md += `**Commits:**\n`;
+                for (const cc of pr.commits) {
+                  md += `- ${cc.message} (${cc.sha.substring(0,7)}) — ${cc.author}\n`;
+                }
+                md += `\n`;
+              }
+            }
+
+            core.setOutput('markdown', md);
+
+      - name: Write CHANGELOG.md
         run: |
-          set -euo pipefail
+          echo "${{ steps.changelog.outputs.markdown }}" > CHANGELOG.md
+          cat CHANGELOG.md
 
-          # Get input selection
-          INPUT_RANGE="${{ github.event.inputs.range || 'auto' }}"
-
-          # Ensure tags are available locally
-          git fetch --tags || true
-
-          # Try to find the last tag reachable from HEAD
-          LAST_TAG="$(git describe --tags --abbrev=0 2>/dev/null || true)"
-
-          if [[ "${INPUT_RANGE}" == "full" ]]; then
-            # From the initial commit to HEAD
-            FIRST_COMMIT="$(git rev-list --max-parents=0 HEAD)"
-            RANGE="${FIRST_COMMIT}..HEAD"
-            RANGE_LABEL="All changes"
-          elif [[ "${INPUT_RANGE}" == "auto" ]]; then
-            if [[ -n "${LAST_TAG}" ]]; then
-              RANGE="${LAST_TAG}..HEAD"
-              RANGE_LABEL="Changes since ${LAST_TAG}"
-            else
-              FIRST_COMMIT="$(git rev-list --max-parents=0 HEAD)"
-              RANGE="${FIRST_COMMIT}..HEAD"
-              RANGE_LABEL="All changes"
-            fi
-          else
-            # Use the user-provided range verbatim (e.g., v1.2.3..HEAD)
-            RANGE="${INPUT_RANGE}"
-            RANGE_LABEL="Range ${INPUT_RANGE}"
-          fi
-
-          echo "Last tag: ${LAST_TAG:-<none>}"
-          echo "Using range: ${RANGE}"
-
-          # Export for later steps
-          echo "range=${RANGE}" >> "$GITHUB_OUTPUT"
-          echo "range_label=${RANGE_LABEL}" >> "$GITHUB_OUTPUT"
-          echo "last_tag=${LAST_TAG}" >> "$GITHUB_OUTPUT"
-
-      - name: Generate changelog section (Markdown)
-        id: gen
-        shell: bash
+      - name: Commit changelog back (optional)
         run: |
-          set -euo pipefail
-
-          RANGE="${{ steps.range.outputs.range }}"
-          RANGE_LABEL="${{ steps.range.outputs.range_label }}"
-          TODAY="$(date -u +'%Y-%m-%d')"
-
-          # Prepare a temporary file
-          TMP_SECTION="$(mktemp)"
-
-          # Header for this section
-          {
-            echo "## ${RANGE_LABEL} – ${TODAY}"
-            echo
-            echo "**Commits:**"
-            echo
-          } > "${TMP_SECTION}"
-
-          # Build commit list
-          # Format: - <message> (author, YYYY-MM-DD) [<short SHA>] [PR # if present]
-          # You can tweak the format to suit Conventional Commits if you use them.
-          git log "${RANGE}" \
-            --pretty=format:'- %s (%an, %ad) `%h`%n' \
-            --date=short \
-          >> "${TMP_SECTION}"
-
-          echo >> "${TMP_SECTION}"
-
-          # Show a preview in logs
-          echo "---- Generated Section ----"
-          cat "${TMP_SECTION}"
-          echo "---------------------------"
-
-          # Persist path for next step
-          echo "section_path=${TMP_SECTION}" >> "$GITHUB_OUTPUT"
-
-      - name: Update CHANGELOG.md
-        id: update
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          SECTION_PATH="${{ steps.gen.outputs.section_path }}"
-          CHANGELOG="CHANGELOG.md"
-
-          if [[ -f "${CHANGELOG}" ]]; then
-            echo "Found existing ${CHANGELOG}. Prepending new section."
-
-            # Prepend the new section while keeping existing content
-            TMP_OUT="$(mktemp)"
-            cat "${SECTION_PATH}" > "${TMP_OUT}"
-            echo >> "${TMP_OUT}"
-            cat "${CHANGELOG}" >> "${TMP_OUT}"
-            mv "${TMP_OUT}" "${CHANGELOG}"
-          else
-            echo "No existing ${CHANGELOG}. Creating a new one."
-
-            {
-              echo "# Changelog"
-              echo
-              echo "All notable changes to this project are documented here."
-              echo
-            } > "${CHANGELOG}"
-
-            cat "${SECTION_PATH}" >> "${CHANGELOG}"
-          fi
-
-          echo "Updated ${CHANGELOG}:"
-          head -n 50 "${CHANGELOG}" || true
-
-      - name: Commit & push changelog (if changed)
-        shell: bash
-        env:
-          GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
-        run: |
-          set -euo pipefail
-          
-          if ! git diff --quiet --exit-code; then
-            git add CHANGELOG.md
-            git commit -m "chore(changelog): update $(date -u +'%Y-%m-%d')"
-            git push origin HEAD:${{ github.ref_name }}
-            echo "Changelog committed and pushed."
-          else
-            echo "No changes detected in CHANGELOG.md; skipping commit."
+          git add CHANGELOG.md
+          git commit -m "chore: PR-only changelog for push ${{ github.sha }}"
+          git push
