@@ -11,7 +11,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
     steps:
-      - name: Checkout Latest Tag
+      - name: Checkout Repo
         uses: actions/checkout@v3
       - name: Update Terraform Module Source
         run: |
@@ -31,4 +31,4 @@ jobs:
           git config --global user.name "NOW DevOps"
           git add .
           git commit -m "Update Terraform module example source to ${NEW_TAG}"
-          git push origin master
+          git push origin main
