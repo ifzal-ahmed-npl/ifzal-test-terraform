@@ -13,6 +13,8 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v3
+        with:
+          ref: "main"
       - name: Update Terraform Module Source
         run: |
           NEW_TAG=${{ github.ref_name }}
@@ -31,5 +33,4 @@ jobs:
           git config --global user.name "NOW DevOps"
           git add .
           git commit -m "Update Terraform module example source to ${NEW_TAG}"
-          git status
-          git push origin HEAD:main
+          git push
