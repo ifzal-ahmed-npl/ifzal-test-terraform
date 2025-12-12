@@ -31,6 +31,6 @@ jobs:
         run: |
           git config --global user.email "devops@nowpensions.com"
           git config --global user.name "NOW DevOps"
-          git add main.tf CHANGELOG.md
-          git commit -m "Update Terraform module example source to ${NEW_TAG}"
+          git add .
+          git -m "Update Terraform module example source to ${NEW_TAG}"
           git push
