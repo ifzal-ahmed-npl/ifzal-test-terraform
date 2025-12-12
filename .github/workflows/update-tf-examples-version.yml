@@ -7,7 +7,7 @@ name: update-tf-module-example-latest-version
 
 jobs:
   update-tf-example-versions:
-    runs-on: ubuntu-lates
+    runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
     steps:
