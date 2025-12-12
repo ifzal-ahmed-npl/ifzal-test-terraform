@@ -17,10 +17,10 @@ jobs:
           ref: "main"
       - name: Update Terraform Module Source
         run: |
-          NEW_TAG=${{ github.ref_name }}
+          RELEASE_TAG=${{ github.ref_name }}
           for file in $(find . -name "*.tf" -type f); do
             if grep -q 'ref=' "$file"; then
-              sed -i 's|\(ref=\)[^"]*|\1'"${NEW_TAG}"'|' "$file"
+              sed -i 's|\(ref=\)[^"]*|\1'"${RELEASE_TAG}"'|' "$file"
               echo "Updated $file"
             else
             echo "Skipped $file (no ref= found)"
@@ -29,9 +29,9 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
-          NEW_TAG=${{ github.ref_name }}
+          RELEASE_TAG=${{ github.ref_name }}
           git config --global user.email "devops@nowpensions.com"
           git config --global user.name "NOW DevOps"
           git add .
-          git commit -m "Update Terraform module example source to ${NEW_TAG}"
+          git commit -m "Update Terraform module example source to ${RELEASE_TAG}"
           git push
