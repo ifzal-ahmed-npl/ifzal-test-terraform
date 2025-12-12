@@ -7,11 +7,13 @@ name: update-tf-module-example-latest-version
 
 jobs:
   update-tf-example-versions:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-lates
+    env:
+      GITHUB_TOKEN: ${{ secrets.TEST_TOKEN }}
     steps:
       - name: Update Terraform Module Source
         run: |
-          NEW_TAG=${{ steps.new_tag.outputs.new_tag }}
+          NEW_TAG=${{ github.ref_name }}
           for file in $(find . -name "*.tf" -type f); do
             if grep -q 'ref=' "$file"; then
               sed -i 's|\(ref=\)[^"]*|\1'"${NEW_TAG}"'|' "$file"
@@ -20,3 +22,8 @@ jobs:
             echo "Skipped $file (no ref= found)"
             fi
           done
+
+      - name: Commit and Push Changes
+        run: |
+          git add main.tf CHANGELOG.md
+          git commit -m "Update Terraform source to ${NEW_TAG} and Change Log"
