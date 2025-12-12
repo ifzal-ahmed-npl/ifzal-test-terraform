@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.3...v1.0.4) (2025-12-12)
+
+
+### Bug Fixes
+
+* updated tag regex and added test source module ([70b9e9b](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/commit/70b9e9be812e6c4875f4877a7a5bff9271c11abd))
+
 ## [1.0.3](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.2...v1.0.3) (2025-12-12)
 
 
