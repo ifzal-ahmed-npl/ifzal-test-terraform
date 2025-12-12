@@ -29,6 +29,7 @@ jobs:
 
       - name: Commit and Push Changes
         run: |
+          NEW_TAG=${{ github.ref_name }}
           git config --global user.email "devops@nowpensions.com"
           git config --global user.name "NOW DevOps"
           git add .
