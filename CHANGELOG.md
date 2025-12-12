@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.13](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.12...v1.0.13) (2025-12-12)
+
+
+### Bug Fixes
+
+* Fix commit step ([e34cd70](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/commit/e34cd704d6c48b5c7fc12aeb5ffb72ea57bc04a9))
+
 ## [1.0.12](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.11...v1.0.12) (2025-12-12)
 
 
