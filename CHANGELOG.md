@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.8](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.7...v1.0.8) (2025-12-12)
+
+
+### Bug Fixes
+
+* Added checkout ([11224d5](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/commit/11224d59fe5a79e5c9c373597b34764364c819ac))
+
 ## [1.0.7](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.6...v1.0.7) (2025-12-12)
 
 
