@@ -31,4 +31,5 @@ jobs:
           git config --global user.name "NOW DevOps"
           git add .
           git commit -m "Update Terraform module example source to ${NEW_TAG}"
-          git push
+          git status
+          git push origin HEAD:main
