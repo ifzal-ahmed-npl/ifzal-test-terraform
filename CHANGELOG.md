@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.20](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.19...v1.0.20) (2025-12-12)
+
+
+### Bug Fixes
+
+* updated tag variable ([cc276ed](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/commit/cc276edc7b864c447a2243e94341324ae03d44d7))
+
 ## [1.0.19](https://github.com/ifzal-ahmed-npl/ifzal-test-terraform/compare/v1.0.18...v1.0.19) (2025-12-12)
 
 
