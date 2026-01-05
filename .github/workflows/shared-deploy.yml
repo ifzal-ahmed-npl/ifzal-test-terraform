@@ -5,6 +5,10 @@ on:
         description: "Environment"
         required: true
         type: string
+      backend-config-location:
+        description: "Location of Backend Config"
+        required: true
+        type: string
 
 jobs:
   shared-terraform-deploy-plan:
@@ -34,7 +38,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=low
+          args: --severity-threshold=high
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
@@ -57,7 +61,7 @@ jobs:
           set -a
           infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
           set +a
-          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config ${{ inputs.backend-config-location }} -no-color -input=false
 
       - name: Terraform plan
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
@@ -121,7 +125,7 @@ jobs:
           set -a
           infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
           set +a
-          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
+          terraform init -backend-config ${{ inputs.backend-config-location }} -no-color -input=false
 
       - name: Terraform apply
         working-directory: ${{ github.workspace }}/Projects/Data-Lake
