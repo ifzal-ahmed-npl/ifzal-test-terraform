@@ -7,4 +7,5 @@ jobs:
     uses: ./shared-deploy.yml
     with:
       environment: "dev"
+      backend-config-location: "./BackendConfig/dev-backend-config.tfvars"
     secrets: inherit
