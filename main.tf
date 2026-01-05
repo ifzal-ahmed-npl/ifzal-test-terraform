@@ -3,5 +3,5 @@ resource "aws_s3_bucket" "test_bucket" {
 }
 
 module "test-s3-bucket" {
-  source = source = "git::https://github.com/NOW-Pensions/npl-global-terraform-modules.git//ecr?ref=v1.0.19"
+  source = source = "git::https://github.com/NOW-Pensions/npl-global-terraform-modules.git//ecr?ref=v1.0.20"
 }
