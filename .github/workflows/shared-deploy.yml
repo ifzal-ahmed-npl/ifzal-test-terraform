@@ -1,0 +1,132 @@
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: "Environment"
+        required: true
+        type: string
+
+jobs:
+  shared-terraform-deploy-plan:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    env:
+      INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+      INFISICAL_DOMAIN: ${{ secrets.INFISICAL_DOMAIN }}
+      INFISICAL_PATH: ${{ secrets.INFISICAL_PATH }}
+      INFISICAL_ENVIRONMENT: ${{ secrets.INFISICAL_ENVIRONMENT }}
+      TF_VAR_ECR_TAG: ${{ github.ref_name }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.ref_name }}
+      - name: Run Snyk to check Terraform Scripts for security issues
+        uses: snyk/actions/iac@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Install Infisical
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          sudo apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo bash
+          sudo apt-get update && sudo apt-get install -y infisical
+          infisical --version
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          set -a
+          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
+          set +a
+          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform plan
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        continue-on-error: true
+        run: |
+          set -a
+          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
+          set +a
+          terraform plan -no-color -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -out=./tfplan | tee ./terraform-plan-output.txt
+
+    shared-terraform-deploy-apply:
+      environment: PREPROD
+      runs-on: ubuntu-latest
+      needs: shared-terraform-deploy-plan
+      env:
+        INFISICAL_TOKEN: ${{ secrets.INFISICAL_TOKEN }}
+        INFISICAL_DOMAIN: ${{ secrets.INFISICAL_DOMAIN }}
+        INFISICAL_PATH: ${{ secrets.INFISICAL_PATH }}
+        INFISICAL_ENVIRONMENT: ${{ secrets.INFISICAL_ENVIRONMENT }}
+        TF_VAR_ECR_TAG: ${{ github.ref_name }}
+      defaults:
+        run:
+          shell: bash
+      steps:
+      - name: 'Cleanup build folder'
+        run: |
+          ls -la ./
+          rm -rf ./* || true
+          rm -rf ./.??* || true
+          ls -la ./
+
+      - name: Checkout Release Tag
+        uses: actions/checkout@v3
+        if: startsWith(github.ref, 'refs/tags')
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_DEFAULT_REGION }}
+
+      - name: Configure np-devops-deploy-user-prod AWS Profile
+        run: |
+          aws configure set aws_access_key_id ${{ env.AWS_ACCESS_KEY_ID }} --profile np-devops-deploy-user-prod
+          aws configure set aws_secret_access_key ${{ env.AWS_SECRET_ACCESS_KEY }} --profile np-devops-deploy-user-prod
+
+      - name: Install Infisical
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          sudo apt-get update && curl -1sLf 'https://artifacts-cli.infisical.com/setup.deb.sh' | sudo bash
+          sudo apt-get update && sudo apt-get install -y infisical
+          infisical --version
+
+      - uses: hashicorp/setup-terraform@v3
+      - name: Terraform init
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          set -a
+          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
+          set +a
+          terraform init -backend-config BackendConfig/preprod-backend-config.tfvars -no-color -input=false
+
+      - name: Terraform apply
+        working-directory: ${{ github.workspace }}/Projects/Data-Lake
+        run: |
+          set -a
+          infisical export --env "$INFISICAL_ENVIRONMENT" --path "$INFISICAL_PATH" --domain "$INFISICAL_DOMAIN" > infisical-vars.env && source infisical-vars.env && rm -rf infisical-vars.env
+          set +a
+          terraform apply -var="INFISICAL_TOKEN=${INFISICAL_TOKEN}" -var="INFISICAL_ENVIRONMENT=${INFISICAL_ENVIRONMENT}" -var="INFISICAL_DOMAIN=${INFISICAL_DOMAIN}" -var="INFISICAL_PATH=${INFISICAL_PATH}" -input=false -no-color -auto-approve
