@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 jobs:
   sql-s3-bucket-replication:
-    uses: ./shared-deploy.yml
+    uses: ./.github/shared-deploy.yml
     with:
       environment: "dev"
       backend-config-location: "./BackendConfig/dev-backend-config.tfvars"
