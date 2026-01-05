@@ -34,7 +34,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          args: --severity-threshold=low
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
